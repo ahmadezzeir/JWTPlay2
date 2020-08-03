@@ -12,12 +12,13 @@ using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text;
 using System.Web.Http;
+using System.Web.Routing;
 
 namespace JWTPlay2.Controller
 {
     public class AccountController : ApiController
     {
-        [AllowAnonymous]       
+        [AllowAnonymous]
         [HttpPost]
         public HttpResponseMessage Login(LoginViewModel model)
         {
@@ -41,7 +42,7 @@ namespace JWTPlay2.Controller
                         response = Request.CreateResponse(new { dbUser, token });
                     }
                     else
-                    {                       
+                    {
                         response = Request.CreateErrorResponse(HttpStatusCode.BadRequest, ModelState);
                     }
                 }
@@ -50,6 +51,53 @@ namespace JWTPlay2.Controller
             {
                 response = Request.CreateErrorResponse(HttpStatusCode.BadRequest, ModelState);
             }
+            return response;
+        }
+
+        [AllowAnonymous]
+        [HttpPost]
+        [Route("Login2")]
+        public HttpResponseMessage Login2(LoginViewModel model)
+        {
+            HttpResponseMessage response = null;
+            if (ModelState.IsValid)
+            {
+                BooksContext db = new BooksContext();
+                BookUserManager userManager = new BookUserManager();
+                var existingUser = db.Users.FirstOrDefault(u => u.UserName == model.UserName);
+
+                if (existingUser == null)
+                {
+                    response = Request.CreateResponse(HttpStatusCode.NotFound);
+                }
+                else
+                {
+                    if (userManager.CheckPassword(existingUser, model.Password))
+                    {
+                        object dbUser;
+                        var token = CreateToken(existingUser, out dbUser);
+                        response = Request.CreateResponse(new { dbUser, token });
+                    }
+                    else
+                    {
+                        response = Request.CreateErrorResponse(HttpStatusCode.BadRequest, ModelState);
+                    }
+                }
+            }
+            else
+            {
+                response = Request.CreateErrorResponse(HttpStatusCode.BadRequest, ModelState);
+            }
+            return response;
+        }
+
+        [AllowAnonymous]
+        [HttpGet]
+        public HttpResponseMessage Get()
+        {
+            HttpResponseMessage response = null;
+            response = Request.CreateErrorResponse(HttpStatusCode.OK, "hello");
+
             return response;
         }
 
